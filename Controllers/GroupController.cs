@@ -32,7 +32,7 @@ namespace dotnet.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Group>> GetSingle(long id)
         {
-            var group = await _db.Groups.FindAsync(id);
+            var group = await _db.Groups.Include(x=>x.Categories).Where(x=>x.Id == id).FirstOrDefaultAsync();
             if (group == null)
                 return NotFound();
 

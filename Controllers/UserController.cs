@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,7 +12,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using System.Net;
 
 namespace dotnet.Controllers {
 
@@ -41,33 +42,26 @@ namespace dotnet.Controllers {
 
         [HttpPost ("register")]
         public async Task<ActionResult<User>> Post (User User) {
-            Random random = new Random ();
-            User.Code = random.Next (9999);
-            User.IsVerified = false;
-            _db.Users.Update (User);
-            await _db.SaveChangesAsync ();
-            sendemail(User.Code , User.Email_Address);
-            return CreatedAtAction (nameof (GetSingle), new { id = User.Id }, User);
+            EmailService email = new EmailService (_db);
+            SMSService sms = new SMSService (_db);
+            var verifyUser = await _db.Users.Where (x => x.Email_Address == User.Email_Address || x.Contact_Number == User.Contact_Number).FirstOrDefaultAsync ();
+            if (verifyUser != null) {
+                if (verifyUser.IsVerified != true) {
 
-        }
-          // send email function 
-        public static void sendemail (int code , string useremail) {
-            using (System.Net.Mail.MailMessage mm = new System.Net.Mail.MailMessage ("multistore199@gmail.com", useremail)) {
-                mm.Subject = "multistore account verification";
-                string body = "Your Account verification code is  " + code ;
-                mm.Body = body;
-                mm.IsBodyHtml = true;
-                System.Net.Mail.SmtpClient smtp = new System.Net.Mail.SmtpClient();
-                // SmtpClient smtp = new SmtpClient ();
-                smtp.Host = "smtp.gmail.com";
-                smtp.EnableSsl = true;
-                // System.Net.NetworkCredential NetworkCred = new System.Net.NetworkCredential("multistore199@gmail.com", "Love@Pakistan@123");
-                NetworkCredential NetworkCred = new NetworkCredential ("multistore199@gmail.com", "Love@Pakistan@123");
-                smtp.UseDefaultCredentials = true;
-                smtp.Credentials = NetworkCred;
-                smtp.Port = 587;
-                smtp.Send (mm);
-
+                    sms.sendCodeSMS (User.Code, User.Contact_Number);
+                    email.sendCodeEmail (User.Code, User.Email_Address);
+                    return StatusCode (404 ,  "unverified-"+verifyUser.Id);
+                }
+                return StatusCode (404, "Email or Mobile Number  Already Exist");
+            } else {
+                Random random = new Random ();
+                User.Code = random.Next (9999);
+                User.IsVerified = false;
+                _db.Users.Update (User);
+                await _db.SaveChangesAsync ();
+                sms.sendCodeSMS (User.Code, User.Contact_Number);
+                email.sendCodeEmail (User.Code, User.Email_Address);
+                return CreatedAtAction (nameof (GetSingle), new { id = User.Id }, User);
             }
 
         }
@@ -86,8 +80,8 @@ namespace dotnet.Controllers {
         [HttpPost ("login")]
         public async Task<ActionResult<User>> Login (User postedUser) {
             var Token = "";
-            string[] Roles = new string[] { "role", "SuperAdmin", "ShopOwner", "Customer", "ServiceProvider" };
-            var dbUser = await _db.Users.FirstOrDefaultAsync (x => x.Email_Address == postedUser.Email_Address && x.Password == postedUser.Password);
+            string[] Roles = new string[] { "role", "SuperAdmin", "ShopOwner", "Customer", "Rider" };
+            var dbUser = await _db.Users.FirstOrDefaultAsync (x => x.Email_Address == postedUser.Email_Address || x.Contact_Number == postedUser.Contact_Number && x.Password == postedUser.Password);
 
             if (dbUser != null) {
                 //Token
@@ -147,14 +141,37 @@ namespace dotnet.Controllers {
         // }
 
         //otp verify
+        [HttpGet ("Role/{id}")]
+        public async Task<ActionResult<IEnumerable<User>>> GetUsrsByRole (long id) {
+            var account = await _db.Users.Where (x => x.RoleId == id).ToListAsync ();
+            if (account == null)
+                return NotFound ();
+
+            return account;
+        }
+
+        [HttpPut ("Status/{id}")]
+        public async Task<ActionResult<IEnumerable<User>>> UpdateUserStatus (long id) {
+            User dbuser = await _db.Users.FirstOrDefaultAsync (x => x.Id == id);
+            if (dbuser.IsDisabled == false || dbuser.IsDisabled == null) {
+                dbuser.IsDisabled = true;
+            } else {
+                dbuser.IsDisabled = false;
+            }
+
+            _db.Entry (dbuser).State = EntityState.Modified;
+            // _db.Update(user);
+            await _db.SaveChangesAsync ();
+            return NoContent ();
+        }
 
         [HttpPost ("{id}/verify")]
-        public async Task<ActionResult<User>> Verify (long id , [FromBody] int code) {
-             User dbUser = await _db.Users.FirstOrDefaultAsync(x => x.Id == id);
-        
+        public async Task<ActionResult<User>> Verify (long id, [FromBody] int code) {
+            User dbUser = await _db.Users.FirstOrDefaultAsync (x => x.Id == id);
+
             if (dbUser == null)
-            return NotFound();
-           
+                return NotFound ();
+
             if (dbUser.Code == code) {
                 dbUser.IsVerified = true;
                 Random random = new Random ();
@@ -162,7 +179,7 @@ namespace dotnet.Controllers {
                 _db.Users.Update (dbUser);
                 await _db.SaveChangesAsync ();
                 var Token = "";
-                string[] Roles = new string[] { "role", "SuperAdmin", "ShopOwner", "Customer", "ServiceProvider" };
+                string[] Roles = new string[] { "role", "SuperAdmin", "ShopOwner", "Customer", "Rider" };
                 //Token
                 var securityKey = new SymmetricSecurityKey (Encoding.UTF8.GetBytes (Configuration["Jwt:key"]));
                 var Credentials = new SigningCredentials (securityKey, SecurityAlgorithms.HmacSha256);
@@ -176,11 +193,7 @@ namespace dotnet.Controllers {
                     new Claim ("Contact", dbUser.Contact_Number),
                     new Claim ("Email", dbUser.Email_Address),
                     new Claim ("IsVerified", dbUser.IsVerified.ToString ())
-
-                    //new Claim(ClaimTypes.Role, dbUser.RoleId.ToString()),
-
                 };
-                // if (users.Role.RoleName != null) { new Claim("roles", users.Role.RoleName); }
 
                 var _Token = new JwtSecurityToken (
                     issuer : Configuration["Jwt:Issuer"],
@@ -209,6 +222,7 @@ namespace dotnet.Controllers {
             dbuser.Email_Address = User.Email_Address;
             dbuser.Contact_Number = User.Contact_Number;
             dbuser.Address = User.Address;
+            dbuser.UserImage = User.UserImage;
             dbuser.Site_link = User.Site_link;
             _db.Entry (dbuser).State = EntityState.Modified;
             // _db.Update(user);
@@ -230,8 +244,42 @@ namespace dotnet.Controllers {
             return NoContent ();
         }
 
-      
+        [HttpPost ("forget-password")]
+        public async Task<long> ForgetPassword ([FromBody] string mobile) {
+            User dbuser = await _db.Users.FirstOrDefaultAsync (x => x.Contact_Number == mobile || x.Email_Address == mobile);
+            EmailService emails = new EmailService (_db);
+            emails.sendCodeEmail (dbuser.Code, dbuser.Email_Address);
+            SMSService sms = new SMSService (_db);
+            sms.sendCodeSMS (dbuser.Code, dbuser.Contact_Number);
+            return dbuser.Id;
+        }
+
+        [HttpPost ("{id}/verifypassword")]
+        public async Task<ActionResult<User>> Verifypassword (long id, [FromBody] int code) {
+            User dbUser = await _db.Users.FirstOrDefaultAsync (x => x.Id == id);
+
+            if (dbUser.Code == code) {
+                // return StatusCode (404, "Email Address Already Exist");
+                Random random = new Random ();
+                dbUser.Code = random.Next (9999);
+                await _db.SaveChangesAsync ();
+                return Ok ();
+            } else {
+                return NotFound (new { message = "Invalid Code." });
+            }
+
+        }
+
+        public static string sendRequest (string url, string data) {
+            System.Net.Http.HttpClient c = new System.Net.Http.HttpClient ();
+            //    Console.WriteLine("***************" + data);
+            //string json = JsonConvert.SerializeObject(dicti, Formatting.Indented);
+            var httpContent = new StringContent (data, Encoding.UTF8, "application/json");
+            // Console.WriteLine("***************"+ httpContent);
+            var content = c.PostAsync (url, httpContent);
+            return content.ToString ();
+        }
 
     }
-    
+
 }

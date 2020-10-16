@@ -14,15 +14,14 @@ public class Shop
 	[JsonIgnore]
     public User User { get; set; }
 	public long GroupId{get; set; }
-	[JsonIgnore]
-    public Group Group { get; set; }
+	public long DeliveryRadius {get; set;}
+    public virtual Group Group { get; set; }
 	public string Contact { get; set; }
 	public string Logo { get; set; }
 	public string Banner { get; set; }
 	public string NDN_Number { get; set; }
-	public string Latitude { get; set; }
-    public string Longitude { get; set; }
-	public string OwnerCNIC {get; set;}
+	public double Latitude { get; set; }
+    public double Longitude { get; set; }
 	public bool? IsVerified { get; set; }
 	public bool? IsDisabled { get; set; }
 	public virtual ICollection<Product> Products { get; set; }

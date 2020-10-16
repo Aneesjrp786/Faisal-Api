@@ -143,6 +143,10 @@ namespace dotnet.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd();
 
+                    b.Property<double>("CustomerLat");
+
+                    b.Property<double>("CustomerLong");
+
                     b.Property<string>("Description");
 
                     b.Property<short?>("IsPaymentDone");
@@ -346,23 +350,23 @@ namespace dotnet.Migrations
 
                     b.Property<string>("Contact");
 
+                    b.Property<long>("DeliveryRadius");
+
                     b.Property<long>("GroupId");
 
                     b.Property<short?>("IsDisabled");
 
                     b.Property<short?>("IsVerified");
 
-                    b.Property<string>("Latitude");
+                    b.Property<double>("Latitude");
 
                     b.Property<string>("Logo");
 
-                    b.Property<string>("Longitude");
+                    b.Property<double>("Longitude");
 
                     b.Property<string>("NDN_Number");
 
                     b.Property<string>("Name");
-
-                    b.Property<string>("OwnerCNIC");
 
                     b.Property<long>("UserId");
 
@@ -407,6 +411,10 @@ namespace dotnet.Migrations
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("Address");
+
+                    b.Property<string>("CNIC");
+
+                    b.Property<string>("CNIC_Image");
 
                     b.Property<int>("Code");
 

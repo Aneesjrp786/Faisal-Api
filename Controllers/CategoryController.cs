@@ -31,7 +31,7 @@ namespace dotnet.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Category>> GetSingle(long id)
         {
-            var category = await _db.Categories.FindAsync(id);
+            var category = await _db.Categories.Include(x=>x.Classifications).Where(x=>x.Id == id).FirstOrDefaultAsync();
             if (category == null)
                 return NotFound();
 

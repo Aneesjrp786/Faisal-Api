@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace dotnet.Migrations
 {
-    public partial class init : Migration
+    public partial class fitst : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -118,6 +118,8 @@ namespace dotnet.Migrations
                     IsDisabled = table.Column<short>(nullable: true),
                     Address = table.Column<string>(nullable: true),
                     Contact_Number = table.Column<string>(nullable: true),
+                    CNIC = table.Column<string>(nullable: true),
+                    CNIC_Image = table.Column<string>(nullable: true),
                     UserImage = table.Column<string>(nullable: true),
                     Site_link = table.Column<string>(nullable: true)
                 },
@@ -212,13 +214,13 @@ namespace dotnet.Migrations
                     Address = table.Column<string>(nullable: true),
                     UserId = table.Column<long>(nullable: false),
                     GroupId = table.Column<long>(nullable: false),
+                    DeliveryRadius = table.Column<long>(nullable: false),
                     Contact = table.Column<string>(nullable: true),
                     Logo = table.Column<string>(nullable: true),
                     Banner = table.Column<string>(nullable: true),
                     NDN_Number = table.Column<string>(nullable: true),
-                    Latitude = table.Column<string>(nullable: true),
-                    Longitude = table.Column<string>(nullable: true),
-                    OwnerCNIC = table.Column<string>(nullable: true),
+                    Latitude = table.Column<double>(nullable: false),
+                    Longitude = table.Column<double>(nullable: false),
                     IsVerified = table.Column<short>(nullable: true),
                     IsDisabled = table.Column<short>(nullable: true)
                 },
@@ -256,6 +258,8 @@ namespace dotnet.Migrations
                     RiderContactNo = table.Column<string>(nullable: true),
                     PaymentMethod = table.Column<int>(nullable: false),
                     OrderStatus = table.Column<int>(nullable: false),
+                    CustomerLat = table.Column<double>(nullable: false),
+                    CustomerLong = table.Column<double>(nullable: false),
                     UserId = table.Column<long>(nullable: false),
                     ShopId = table.Column<long>(nullable: false),
                     RiderId = table.Column<long>(nullable: true)
