@@ -33,8 +33,8 @@ namespace dotnet.Models
         public OrderStatus OrderStatus {get ; set;} 
        public double CustomerLat {get; set;}
        public double CustomerLong {get; set;}
+       public int OrderCode {get; set;}
         public long UserId { get; set; }
-         [JsonIgnore]
         public User User { get; set; }
        
         public long ShopId { get; set; }

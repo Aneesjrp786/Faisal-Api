@@ -50,25 +50,12 @@ namespace dotnet.Controllers {
             return orders;
         }
 
-        [HttpGet ("usershop/{id}")]
-        public async Task<ActionResult<IEnumerable<Order>>> GetByUserShops (long id) {
-            // var shops = await _db.Shops.Where(x=>x.UserId == id).ToListAsync();
-            //  List<Order> orders = new List<Order>();
-
-            // foreach(var shop in shops)
-            // {
-            //     var order = await _db.Orders.Where(x=>x.ShopId == shop.Id).ToListAsync();
-            //     orders.Add(order);
-            // }
-            // // var orders =  await _db.Orders.Where(x=>x.UserId == id).ToListAsync();
-            // return orders;
-
-        // ).ToList ();
-
+        [HttpGet ("usershop/{id}/{status}")]
+        public async Task<ActionResult<IEnumerable<Order>>> GetByUserShops (long id , OrderStatus status) {
         var orders = await (from shop in _db.Shops 
         join order in _db.Orders
-         on shop.Id equals order.ShopId 
-         where shop.UserId == id 
+         on shop.Id equals order.ShopId
+         where shop.UserId == id && order.OrderStatus == status
          select new Order() {
             Id =order.Id,
             Description=order.Description,
@@ -86,7 +73,7 @@ namespace dotnet.Controllers {
     // GET api/order/5
     [HttpGet ("{id}")]
     public async Task<ActionResult<Order>> GetSingle (long id) {
-        var order = await _db.Orders.Include(x => x.Shop).Include (x => x.OrderItems).ThenInclude (x => x.Product).FirstOrDefaultAsync (x => x.Id == id);
+        var order = await _db.Orders.Include(x => x.Shop).Include(x=>x.User).Include (x => x.OrderItems).ThenInclude (x => x.Product).FirstOrDefaultAsync (x => x.Id == id);
         if (order == null)
             return NotFound ();
 
@@ -105,15 +92,22 @@ namespace dotnet.Controllers {
     // POST api/order
     [HttpPost]
     public async Task<ActionResult<Order>> Post (Order order) {
-        _db.Orders.Update (order);
+       Random random = new Random ();
+         order.OrderCode = random.Next (999999);
+          _db.Orders.Update (order);
 
-        await _db.SaveChangesAsync ();
+         await _db.SaveChangesAsync ();
 
         foreach (var item in order.OrderItems) {
             Product product = await _db.Products.Where (x => x.Id == item.ProductId).FirstOrDefaultAsync ();
             product.Quantity = product.Quantity - item.Quantity;
             _db.SaveChangesAsync ();
         }
+var User = await _db.Users.Where(x=> x.Id == order.UserId).FirstOrDefaultAsync();
+        EmailService email = new EmailService (_db);
+            SMSService sms = new SMSService (_db);
+                sms.sendOrderCodeSMS (order.OrderCode, User.Contact_Number);
+                email.sendOrderCode (order.OrderCode, User.Email_Address);
 
         return CreatedAtAction (nameof (GetSingle), new { id = order.Id }, order);
     }
@@ -135,7 +129,42 @@ namespace dotnet.Controllers {
         var order = await _db.Orders.Where(x=>x.Id == id).FirstOrDefaultAsync();
         if (order == null)
             return BadRequest ();
+        if (status == OrderStatus.Assigned)
+        {
+            var checkOrder = await _db.Orders.Where(x=>x.RiderId == riderid && x.OrderStatus == status).FirstOrDefaultAsync();
+            if (checkOrder != null)
+            return StatusCode (404, "you can accept only one order at a time");
+        }
         order.RiderId = riderid;
+        order.OrderStatus = status;
+        await _db.SaveChangesAsync ();
+        return Ok();
+    }
+
+    [HttpPut ("complete/{id}/{orderCode}/{status}")]
+    public async Task<IActionResult> CompleteOrder (long id, int orderCode , OrderStatus status) {
+        var order = await _db.Orders.Where(x=>x.Id == id).FirstOrDefaultAsync();
+        if (order == null)
+            return BadRequest ();
+        if (order.OrderCode == orderCode)
+        {
+            order.OrderStatus = status;
+        await _db.SaveChangesAsync ();
+        return Ok();
+        }
+        else 
+        return StatusCode (404, "invalid Order code");
+        
+    }
+
+
+
+
+    [HttpPut ("{id}/changestatus/{status}")]
+    public async Task<IActionResult> updateStatus (long id, OrderStatus status) {
+        var order = await _db.Orders.Where(x=>x.Id == id).FirstOrDefaultAsync();
+        if (order == null)
+            return BadRequest ();
         order.OrderStatus = status;
         await _db.SaveChangesAsync ();
         return Ok();

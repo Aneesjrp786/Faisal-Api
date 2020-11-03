@@ -24,6 +24,11 @@ namespace dotnet
                 SendSMS(usermobile , sms);
             }
 
+             public void sendOrderCodeSMS (int code , string usermobile) {
+                string sms = "Your Order is placed successfully. Order code is" + code + " you have to provide this code while recieving order" ;
+                SendSMS(usermobile , sms);
+            }
+
         
         
         public string SendSMS(string MobileNumber, string text)

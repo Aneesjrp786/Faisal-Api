@@ -41,11 +41,19 @@ namespace dotnet.Models {
                 new Role {
                     Id = 3,
                         Title = "Customer"
+                },
+                new Role {
+                    Id = 4,
+                    Title = "Rider"
                 }
             );
 
             modelBuilder.Entity<Shop> ()
                 .Property (r => r.IsVerified)
+                .HasConversion (new BoolToZeroOneConverter<Int16> ());
+
+            modelBuilder.Entity<Shop> ()
+                .Property (r => r.IsInRange)
                 .HasConversion (new BoolToZeroOneConverter<Int16> ());
 
             modelBuilder.Entity<Shop> ()

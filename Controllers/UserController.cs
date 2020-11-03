@@ -40,17 +40,66 @@ namespace dotnet.Controllers {
             return user;
         }
 
+            [HttpGet ("dashboard/byShopowner/data/{id}")]
+        public async Task<ActionResult<CustomerDashboard>> GetDashboardDataForOwner(int id) {
+            var dashboard = new CustomerDashboard();
+            var activeShops =  _db.Shops.Where(x => x.UserId == id &&  x.IsVerified != true).Count();
+            var deativeShops =  _db.Shops.Where(x => x.UserId == id &&  x.IsVerified == false).Count();
+
+        var Product = await (from Products in _db.Products    
+        join shop in _db.Shops
+         on Products.ShopId equals shop.Id
+         where shop.UserId == id 
+          group new { Products, shop } by new { Products.Id } into products
+         select new CustomerDashboard() {
+             Products=products.Count()
+        }).ToListAsync();
+
+               
+            dashboard.ActiveShops = activeShops;
+            dashboard.DeactiveShops = deativeShops;
+
+            return dashboard;
+        }
+
+        [HttpGet ("dashboard/data")]
+        public async Task<ActionResult<Dashboard>> GetDashboardData() {
+            var dashboard = new Dashboard();
+            var Allusers =  _db.Users.Count();
+            var activeShopOwners =  _db.Users.Where(x => x.RoleId == 2 &&  x.IsDisabled != true).Count();
+            var disabledShopOwners =  _db.Users.Where(x => x.RoleId == 2 &&  x.IsDisabled == true).Count();
+            var activeCustomers =  _db.Users.Where(x => x.RoleId == 3 && x.IsDisabled != true).Count();
+            var disabledCustomers =  _db.Users.Where(x => x.RoleId == 3 && x.IsDisabled == true).Count();
+            var activeRiders =  _db.Users.Where(x => x.RoleId == 4 && x.IsDisabled != true).Count();
+            var disabledRiders =  _db.Users.Where(x => x.RoleId == 4 && x.IsDisabled == true).Count();
+            var activeShops =  _db.Shops.Where(x => x.IsVerified == true).Count();
+            var disabledShops=  _db.Shops.Where(x => x.IsVerified != true).Count();        
+            dashboard.TotalUsers = Allusers;
+            dashboard.ActiveShopOwners = activeShopOwners;
+            dashboard.DisabledShopOwners = disabledShopOwners;
+            dashboard.ActiveCustomers = activeCustomers;
+            dashboard.DisabledCustomers = disabledCustomers;
+            dashboard.ActiveRiders = activeRiders;
+            dashboard.DisabledRiders = disabledRiders;
+            dashboard.ActiveShops = activeShops;
+            dashboard.PendingShops = disabledShops;
+
+            return dashboard;
+        }
+
         [HttpPost ("register")]
         public async Task<ActionResult<User>> Post (User User) {
+            if (User.RoleId == 4)
+                User.IsDisabled = true;
             EmailService email = new EmailService (_db);
             SMSService sms = new SMSService (_db);
             var verifyUser = await _db.Users.Where (x => x.Email_Address == User.Email_Address || x.Contact_Number == User.Contact_Number).FirstOrDefaultAsync ();
             if (verifyUser != null) {
                 if (verifyUser.IsVerified != true) {
 
-                    sms.sendCodeSMS (User.Code, User.Contact_Number);
-                    email.sendCodeEmail (User.Code, User.Email_Address);
-                    return StatusCode (404 ,  "unverified-"+verifyUser.Id);
+                    sms.sendCodeSMS (verifyUser.Code, verifyUser.Contact_Number);
+                    email.sendCodeEmail (verifyUser.Code, verifyUser.Email_Address);
+                    return StatusCode (404, "unverified-" + verifyUser.Id);
                 }
                 return StatusCode (404, "Email or Mobile Number  Already Exist");
             } else {
@@ -82,7 +131,14 @@ namespace dotnet.Controllers {
             var Token = "";
             string[] Roles = new string[] { "role", "SuperAdmin", "ShopOwner", "Customer", "Rider" };
             var dbUser = await _db.Users.FirstOrDefaultAsync (x => x.Email_Address == postedUser.Email_Address || x.Contact_Number == postedUser.Contact_Number && x.Password == postedUser.Password);
+            if (dbUser.IsVerified != true) {
+                EmailService email = new EmailService (_db);
+                SMSService sms = new SMSService (_db);
+                sms.sendCodeSMS (dbUser.Code, dbUser.Contact_Number);
+                email.sendCodeEmail (dbUser.Code, dbUser.Email_Address);
+                return StatusCode (404, "unverified-" + dbUser.Id);
 
+            }
             if (dbUser != null) {
                 //Token
                 var securityKey = new SymmetricSecurityKey (Encoding.UTF8.GetBytes (Configuration["Jwt:key"]));
@@ -112,13 +168,11 @@ namespace dotnet.Controllers {
 
                 );
                 Token = new JwtSecurityTokenHandler ().WriteToken (_Token);
-
+                return Ok (new { Token = Token });;
             }
 
-            if (dbUser == null)
-                return NotFound (new { message = "Invalid Email or Password." });
-
-            return Ok (new { Token = Token });;
+            else
+                return NotFound (new { message = "Invalid Email or Password." }); 
         }
 
         // [HttpPut("{id}/update-profile")]
@@ -147,6 +201,23 @@ namespace dotnet.Controllers {
             if (account == null)
                 return NotFound ();
 
+            return account;
+        }
+
+        [HttpGet ("Rider/disabled")]
+        public async Task<ActionResult<IEnumerable<User>>> GetDisabledRiders (long id) {
+            var account = await _db.Users.Where (x => x.RoleId == 4 && x.IsDisabled == true).ToListAsync ();
+            if (account == null)
+                return NotFound ();
+
+            return account;
+        }
+
+        [HttpGet ("Rider/enabled")]
+        public async Task<ActionResult<IEnumerable<User>>> GetEnabledRiders (long id) {
+            var account = await _db.Users.Where (x => x.RoleId == 4 && x.IsDisabled == false).ToListAsync ();
+            if (account == null)
+                return NotFound ();
             return account;
         }
 

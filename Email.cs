@@ -42,6 +42,27 @@ namespace dotnet
             }
 
         }
+//
+         public  void sendOrderCode (int code , string useremail) {
+            using (System.Net.Mail.MailMessage mm = new System.Net.Mail.MailMessage ("multistore199@gmail.com", useremail)) {
+                mm.Subject = "kuickSave Order Code";
+                string body = "Your Order is placed successfully. Order code is" + code + " you have to provide this code while recieving order" ;
+                mm.Body = body;
+                mm.IsBodyHtml = true;
+                System.Net.Mail.SmtpClient smtp = new System.Net.Mail.SmtpClient();
+                // SmtpClient smtp = new SmtpClient ();
+                smtp.Host = "smtp.gmail.com";
+                smtp.EnableSsl = true;
+                // System.Net.NetworkCredential NetworkCred = new System.Net.NetworkCredential("multistore199@gmail.com", "Love@Pakistan@123");
+                NetworkCredential NetworkCred = new NetworkCredential ("multistore199@gmail.com", "Love@Pakistan@123");
+                smtp.UseDefaultCredentials = true;
+                smtp.Credentials = NetworkCred;
+                smtp.Port = 587;
+                smtp.Send (mm);
+
+            }
+
+        }
 
 
          // send email function 

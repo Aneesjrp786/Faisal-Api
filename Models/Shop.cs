@@ -11,8 +11,7 @@ public class Shop
 	public string Name { get; set; }
 	public string Address { get; set; }
 	public long UserId { get; set; }
-	[JsonIgnore]
-    public User User { get; set; }
+    public virtual User User { get; set; }
 	public long GroupId{get; set; }
 	public long DeliveryRadius {get; set;}
     public virtual Group Group { get; set; }
@@ -22,6 +21,7 @@ public class Shop
 	public string NDN_Number { get; set; }
 	public double Latitude { get; set; }
     public double Longitude { get; set; }
+	public bool? IsInRange { get; set; }
 	public bool? IsVerified { get; set; }
 	public bool? IsDisabled { get; set; }
 	public virtual ICollection<Product> Products { get; set; }

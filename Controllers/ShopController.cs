@@ -25,15 +25,16 @@ namespace dotnet.Controllers {
 
         [HttpGet ("{lat}/{lng}")]
         public async Task<ActionResult<ICollection<Shop>>> GetInField (float lat, float lng) {
-            var shops = await _db.Shops.Include (x => x.Group).ToListAsync ();
-            List<Shop> fieldShops = new List<Shop> ();
+            var shops = await _db.Shops.Include (x => x.Group).Where(x=>x.IsVerified == true).ToListAsync ();
+           // List<Shop> fieldShops = new List<Shop> ();
             foreach (var shop in shops) {
                 var distance = CalculateDistance (lat, lng, shop.Latitude, shop.Longitude);
                 if (distance <= shop.DeliveryRadius) {
-                    fieldShops.Add (shop);
+                    //fieldShops.Add (shop);
+                    shop.IsInRange = true;
                 }
             }
-            return fieldShops;
+            return shops;
         }
 
         [HttpGet ("user/{id}")]
@@ -47,14 +48,14 @@ namespace dotnet.Controllers {
         }
 
         [HttpGet ("unverfied")]
-        public async Task<ActionResult<IEnumerable<Shop>>> GetUnVerified (long id) {
+        public async Task<ActionResult<IEnumerable<Shop>>> GetUnVerified () {
             return await _db.Shops.Where (x => x.IsVerified == false).Include (x => x.Group).ToListAsync ();
         }
 
         // GET api/group/5
         [HttpGet ("{id}")]
         public async Task<ActionResult<Shop>> GetSingle (long id) {
-            var shop = await _db.Shops.FindAsync (id);
+            var shop = await _db.Shops.Where(x=>x.Id == id).Include(x=>x.User).FirstOrDefaultAsync();
             if (shop == null)
                 return NotFound ();
 
