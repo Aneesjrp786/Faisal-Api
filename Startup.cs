@@ -48,7 +48,7 @@ namespace dotnet {
                 });
             services.AddDbContext<Context> (options => options.UseMySQL (Configuration.GetConnectionString ("DefaultConnection")));
             // services.AddDbContext<ApplicationDbContext>();
-            services.AddControllers ();
+            services.AddControllers();
             services.AddSwaggerGen ((options) => {
                 options.SwaggerDoc ("v1", new OpenApiInfo { Title = "myApi", Version = "v1" });
             });
