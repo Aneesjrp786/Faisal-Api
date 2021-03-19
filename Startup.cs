@@ -54,7 +54,7 @@ namespace dotnet {
             });
             services.AddCors ();
             services.AddSignalR();
-
+            
             services.AddControllersWithViews ()
                 .AddNewtonsoftJson (options =>
                     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore

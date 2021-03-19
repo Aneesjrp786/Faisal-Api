@@ -7,9 +7,17 @@ namespace dotnet.Models
 	{
 		public long Id { get; set; }
 		public string Name { get; set; }
-		public long maxtime {get; set;}
-		public int maxattempts {get; set;}
-		public long UserId { get; set; }
-        public virtual User User { get; set; }
+		public TypeOfQuiz Type {get ; set;} 
+		public long duration {get; set;}
+		public int num_of_attemps {get; set;}
+		public long TeacherId { get; set; }
+        public virtual Teacher Teacher { get; set; }
 	}
+	   public enum TypeOfQuiz
+    {
+        Survey,
+        Quiz,
+		Questionnaire,
+    }
+
 }

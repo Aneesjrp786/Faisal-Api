@@ -37,19 +37,7 @@ namespace dotnet.Controllers
                 return NotFound();
 
             return Subject;
-        }
-
-         [HttpGet("byuser/{id}")]
-        public async Task<ActionResult<IEnumerable<Subject>>> Getbyuser(long id)
-        {
-            var Subject = await _db.Subjects.Where(x=>x.UserId == id).ToListAsync();
-            if (Subject == null)
-                return NotFound();
-
-            return Subject;
-        }
-
-      
+        }      
 
         // POST api/Subject
        [HttpPost]
