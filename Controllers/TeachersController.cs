@@ -39,16 +39,6 @@ namespace dotnet.Controllers
             return Teacher;
         }
 
-         [HttpGet("byuser/{id}")]
-        public async Task<ActionResult<IEnumerable<Teacher>>> Getbyuser(long id)
-        {
-            var Teacher = await _db.Teachers.Where(x=>x.Id == id).ToListAsync();
-            if (Teacher == null)
-                return NotFound();
-
-            return Teacher;
-        }
-
            //Login api/Teacher
          [HttpPost("login")]
         public async Task<ActionResult<Teacher>> login(Teacher PostedUser)
@@ -93,7 +83,7 @@ namespace dotnet.Controllers
             var Teacher = await _db.Teachers.FindAsync(id);
 
             if (Teacher == null)
-                return NotFound();
+                return NotFound("Not Found");
 
             _db.Teachers.Remove(Teacher);
             await _db.SaveChangesAsync();

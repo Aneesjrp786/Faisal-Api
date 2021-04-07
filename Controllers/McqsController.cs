@@ -39,15 +39,6 @@ namespace dotnet.Controllers
             return Mcqs;
         }
 
-          [HttpGet("bysubject/{id}")]
-        public async Task<ActionResult<IEnumerable<Mcqs>>> Getbysubject(long id)
-        {
-            var Mcqss = await _db.Mcqss.Where(x=>x.SubjectId == id).ToListAsync();
-            if (Mcqss == null)
-                return NotFound();
-
-            return Mcqss;
-        }
 
         // POST api/Mcqs
        [HttpPost]

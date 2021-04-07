@@ -25,6 +25,7 @@ namespace dotnet.Controllers
          public async Task<ActionResult<IEnumerable<Student>>> GetAll()
         {
             return await _db.Students.ToListAsync();
+            
            // return await _db.Students.ToListAsync();
         }
 
@@ -77,6 +78,7 @@ namespace dotnet.Controllers
 
             return NoContent();
         }
+
 
         // DELETE api/Student/5
         [HttpDelete("{id}")]

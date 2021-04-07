@@ -8,7 +8,7 @@ using dotnet.Models;
 namespace dotnet.Migrations
 {
     [DbContext(typeof(Context))]
-    [Migration("20210319101256_InitialCreate")]
+    [Migration("20210407072158_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
